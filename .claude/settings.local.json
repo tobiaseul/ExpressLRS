@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"UID_LEN\\\\|RESERVED_EEPROM\" /Users/tobi/Documents/Coding/ExpressLRS/src/lib/elrs_eeprom/elrs_eeprom.h /Users/tobi/Documents/Coding/ExpressLRS/src/lib/*/config.h)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
+    ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
+  }
+}
