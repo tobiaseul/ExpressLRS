@@ -317,6 +317,21 @@ public:
     eFailsafeMode GetFailsafeMode() const { return (eFailsafeMode)m_config.failsafeMode; }
     uint8_t GetTargetSysId()  const { return m_config.targetSysId; }
     uint8_t GetSourceSysId()  const { return m_config.sourceSysId; }
+
+    // LED Configuration Getters
+    const led_config_t* GetLedConfig() const { return &m_config.ledConfig; }
+    uint8_t GetLedCurrentPreset() const { return m_config.ledConfig.currentPreset; }
+    uint8_t GetLedCurrentBrightness() const { return m_config.ledConfig.currentBrightness; }
+    uint8_t GetLedAuxChannelPreset() const { return m_config.ledConfig.auxChannelPreset; }
+    uint8_t GetLedAuxChannelBright() const { return m_config.ledConfig.auxChannelBright; }
+    const led_pixel_t* GetLedPixel(uint8_t strip, uint8_t pixel) const
+    {
+        if (strip < LED_MAX_STRIPS && pixel < LED_MAX_PIXELS_PER_STRIP) {
+            return &m_config.ledConfig.presets[m_config.ledConfig.currentPreset].strips[strip].pixels[pixel];
+        }
+        return nullptr;
+    }
+
     rx_config_bindstorage_t GetBindStorage() const { return (rx_config_bindstorage_t)m_config.bindStorage; }
     bool IsOnLoan() const;
 
@@ -343,6 +358,13 @@ public:
     void SetSourceSysId(uint8_t sysID);
     void SetBindStorage(rx_config_bindstorage_t value);
     void ReturnLoan();
+
+    // LED Configuration Setters
+    void SetLedPreset(uint8_t preset);
+    void SetLedBrightness(uint8_t brightness);
+    void SetLedPixel(uint8_t preset, uint8_t strip, uint8_t pixel, const led_pixel_t& px);
+    void SetLedStripEnabled(uint8_t preset, uint8_t strip, bool enabled);
+    void SetLedAuxChannels(uint8_t presetCh, uint8_t brightCh);
 
 private:
     void CheckUpdateFlashedUid(bool skipDescrimCheck);
