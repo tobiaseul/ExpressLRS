@@ -294,6 +294,10 @@ static void GetConfiguration(AsyncWebServerRequest *request)
 {
   const bool exportMode = request->hasArg("export");
   auto *response = new AsyncJsonResponse();
+  if (!response) {
+    request->send(500, "application/json", "{\"error\": \"Memory allocation failed\"}");
+    return;
+  }
   const auto json = response->getRoot();
 
   if (!exportMode)
@@ -935,6 +939,10 @@ static void handleGetLedConfig(AsyncWebServerRequest *request)
   }
 
   auto *response = new AsyncJsonResponse();
+  if (!response) {
+    request->send(500, "application/json", "{\"error\": \"Memory allocation failed\"}");
+    return;
+  }
   const auto json = response->getRoot();
 
   // Serialize presets
@@ -1026,10 +1034,20 @@ static void handlePostLedConfig(AsyncWebServerRequest *request, JsonVariant &jso
               const JsonObject pixelObj = pixels[px].as<JsonObject>();
 
               led_pixel_t pixel = {};
-              pixel.r = pixelObj["r"] | 0;
-              pixel.g = pixelObj["g"] | 0;
-              pixel.b = pixelObj["b"] | 0;
-              pixel.state = pixelObj["state"] | 0;
+
+              // RGB color values: validate and clamp to 0-255
+              uint16_t rVal = pixelObj["r"].as<uint16_t>();
+              pixel.r = (rVal > 255) ? 255 : rVal;
+
+              uint16_t gVal = pixelObj["g"].as<uint16_t>();
+              pixel.g = (gVal > 255) ? 255 : gVal;
+
+              uint16_t bVal = pixelObj["b"].as<uint16_t>();
+              pixel.b = (bVal > 255) ? 255 : bVal;
+
+              // State: 2-bit field (0-3 only), mask to prevent overflow
+              pixel.state = pixelObj["state"].as<uint8_t>() & 0x3;
+
               pixel.blinkFreqHz = pixelObj["blinkFreqHz"] | 0;
               pixel.brightness = pixelObj["brightness"] | 255;
 
@@ -1042,7 +1060,11 @@ static void handlePostLedConfig(AsyncWebServerRequest *request, JsonVariant &jso
   }
 
   // Commit changes to EEPROM
-  config.Commit();
+  uint32_t commitResult = config.Commit();
+  if (commitResult != 0) {
+    request->send(500, "application/json", "{\"error\": \"Failed to save configuration\"}");
+    return;
+  }
 
   request->send(200, "application/json", "{\"status\": \"ok\", \"msg\": \"LED configuration updated\"}");
 }
