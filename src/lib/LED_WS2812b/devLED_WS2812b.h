@@ -27,7 +27,7 @@ public:
     /// Handle CRSF channel data for preset/brightness control
     /// @param channel CRSF channel number (0-15)
     /// @param value Channel value (0-2047)
-    void HandleChannelData(uint8_t channel, uint16_t value);
+    void HandleChannelData(uint8_t channel, uint32_t value);
 
     /// Render all LED strips at configured refresh rate (~30 Hz)
     void Render();

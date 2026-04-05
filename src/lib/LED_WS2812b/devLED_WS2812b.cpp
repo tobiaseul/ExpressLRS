@@ -63,7 +63,7 @@ void DevLED_WS2812b::Begin()
     DBGLN("WS2812b LED Driver initialized with %d strips", stripIdx);
 }
 
-void DevLED_WS2812b::HandleChannelData(uint8_t channel, uint16_t value)
+void DevLED_WS2812b::HandleChannelData(uint8_t channel, uint32_t value)
 {
     const led_config_t* ledConfig = config.GetLedConfig();
     if (!ledConfig) return;
