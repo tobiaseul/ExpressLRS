@@ -33,8 +33,8 @@ void DevLED_WS2812b::Begin()
         const rx_config_pwm_t* pwmCh = config.GetPwmChannel(ch);
         if (!pwmCh) continue;
 
-        // Check if PWM channel mode is LED_OUTPUT (somLED = 16)
-        if (pwmCh->val.mode == 16) {  // somLED mode
+        // Check if PWM channel mode is LED_OUTPUT (somLED = 16 from common.h)
+        if (pwmCh->val.mode == 16) {  // somLED mode for WS2812b NeoPixel output
             // Create NeoPixel strip for this channel
             Adafruit_NeoPixel* strip = new Adafruit_NeoPixel(
                 LED_MAX_PIXELS_PER_STRIP,
@@ -50,6 +50,8 @@ void DevLED_WS2812b::Begin()
                 m_strips.push_back({(uint8_t)ch, stripIdx, strip});
                 DBGLN("LED Strip %d initialized on GPIO %d", stripIdx, ch);
                 stripIdx++;
+            } else {
+                DBGLN("Failed to allocate NeoPixel strip for GPIO %d", ch);
             }
         }
     }
@@ -126,7 +128,7 @@ void DevLED_WS2812b::Render()
     // Render each strip
     for (uint8_t stripIdx = 0; stripIdx < m_strips.size(); stripIdx++) {
         led_strip_mapping_t& mapping = m_strips[stripIdx];
-        if (!mapping.strip) continue;
+        if (!mapping.strip || mapping.stripIndex >= LED_MAX_STRIPS) continue;
 
         const led_strip_t& stripData = presetData->strips[mapping.stripIndex];
 
@@ -201,15 +203,6 @@ void DevLED_WS2812b::RenderPixel(uint8_t stripIdx, uint8_t pixelIndex, const led
     }
 
     strip->setPixelColor(pixelIndex, color);
-}
-
-bool DevLED_WS2812b::GetPixelBlinkState(uint16_t elapsedMs, uint16_t freqHz)
-{
-    // Utility function for blink calculation
-    // freqHz is in Hz (1-100)
-    if (freqHz == 0) freqHz = 1;
-    uint32_t periodMs = 1000 / freqHz;
-    return elapsedMs < (periodMs / 2);
 }
 
 // Global device instance

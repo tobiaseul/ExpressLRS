@@ -60,7 +60,6 @@ private:
     } m_blinkState;
 
     void RenderPixel(uint8_t stripIndex, uint8_t pixelIndex, const led_pixel_t& pixel);
-    bool GetPixelBlinkState(uint16_t elapsedMs, uint16_t freqHz);
 };
 
 #endif
