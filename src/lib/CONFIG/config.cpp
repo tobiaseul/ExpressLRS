@@ -821,6 +821,30 @@ void RxConfig::Load()
     if (version == RX_CONFIG_VERSION)
     {
         CheckUpdateFlashedUid(false);
+        // Initialize LED config to defaults if needed (first-time setup)
+        if (m_config.ledConfig.auxChannelPreset == 0xFF || m_config.ledConfig.auxChannelPreset == 0x00) {
+            m_config.ledConfig.auxChannelPreset = 255;
+            m_config.ledConfig.auxChannelBright = 255;
+            m_config.ledConfig.currentPreset = 0;
+            m_config.ledConfig.currentBrightness = 100;
+
+            // Initialize all presets with default colors (all pixels off)
+            for (uint8_t p = 0; p < LED_MAX_PRESETS; p++) {
+                for (uint8_t s = 0; s < LED_MAX_STRIPS; s++) {
+                    m_config.ledConfig.presets[p].strips[s].enabled = 1;
+                    for (uint8_t px = 0; px < LED_MAX_PIXELS_PER_STRIP; px++) {
+                        m_config.ledConfig.presets[p].strips[s].pixels[px] = {
+                            0, 0, 0,  // black
+                            0,        // state: off
+                            0,        // blinkFreqHz: 0
+                            255       // brightness: full
+                        };
+                    }
+                }
+            }
+            m_modified = 1;
+            Commit();
+        }
         return;
     }
 
@@ -848,6 +872,28 @@ void RxConfig::Load()
         case 9: // fallthrough
         case 10:
             UpgradeEepromV9V10(version); break;
+    }
+    // Initialize LED config to defaults if needed (first-time setup)
+    if (m_config.ledConfig.auxChannelPreset == 0xFF || m_config.ledConfig.auxChannelPreset == 0x00) {
+        m_config.ledConfig.auxChannelPreset = 255;
+        m_config.ledConfig.auxChannelBright = 255;
+        m_config.ledConfig.currentPreset = 0;
+        m_config.ledConfig.currentBrightness = 100;
+
+        // Initialize all presets with default colors (all pixels off)
+        for (uint8_t p = 0; p < LED_MAX_PRESETS; p++) {
+            for (uint8_t s = 0; s < LED_MAX_STRIPS; s++) {
+                m_config.ledConfig.presets[p].strips[s].enabled = 1;
+                for (uint8_t px = 0; px < LED_MAX_PIXELS_PER_STRIP; px++) {
+                    m_config.ledConfig.presets[p].strips[s].pixels[px] = {
+                        0, 0, 0,  // black
+                        0,        // state: off
+                        0,        // blinkFreqHz: 0
+                        255       // brightness: full
+                    };
+                }
+            }
+        }
     }
     m_modified = EVENT_CONFIG_MODEL_CHANGED; // anything to force write
     Commit();
@@ -1420,6 +1466,65 @@ void RxConfig::ReturnLoan()
             memset(m_config.uid, 0, UID_LEN);
 
         m_modified = EVENT_CONFIG_UID_CHANGED;
+    }
+}
+
+// LED Configuration Setters
+void RxConfig::SetLedPreset(uint8_t preset)
+{
+    if (preset < LED_MAX_PRESETS && preset != m_config.ledConfig.currentPreset)
+    {
+        m_config.ledConfig.currentPreset = preset;
+        m_modified = EVENT_CONFIG_MODEL_CHANGED;
+    }
+}
+
+void RxConfig::SetLedBrightness(uint8_t brightness)
+{
+    uint8_t newBrightness = (brightness > 100) ? 100 : brightness;
+    if (newBrightness != m_config.ledConfig.currentBrightness)
+    {
+        m_config.ledConfig.currentBrightness = newBrightness;
+        m_modified = EVENT_CONFIG_MODEL_CHANGED;
+    }
+}
+
+void RxConfig::SetLedPixel(uint8_t preset, uint8_t strip, uint8_t pixel, const led_pixel_t& px)
+{
+    if (preset < LED_MAX_PRESETS && strip < LED_MAX_STRIPS && pixel < LED_MAX_PIXELS_PER_STRIP)
+    {
+        if (memcmp(&m_config.ledConfig.presets[preset].strips[strip].pixels[pixel], &px, sizeof(led_pixel_t)) != 0)
+        {
+            m_config.ledConfig.presets[preset].strips[strip].pixels[pixel] = px;
+            m_modified = EVENT_CONFIG_MODEL_CHANGED;
+        }
+    }
+}
+
+void RxConfig::SetLedStripEnabled(uint8_t preset, uint8_t strip, bool enabled)
+{
+    if (preset < LED_MAX_PRESETS && strip < LED_MAX_STRIPS)
+    {
+        uint8_t newValue = enabled ? 1 : 0;
+        if (newValue != m_config.ledConfig.presets[preset].strips[strip].enabled)
+        {
+            m_config.ledConfig.presets[preset].strips[strip].enabled = newValue;
+            m_modified = EVENT_CONFIG_MODEL_CHANGED;
+        }
+    }
+}
+
+void RxConfig::SetLedAuxChannels(uint8_t presetCh, uint8_t brightCh)
+{
+    // Validate channels: 0-15 are valid aux channels, 255 = disabled
+    if ((presetCh <= 15 || presetCh == 255) && (brightCh <= 15 || brightCh == 255))
+    {
+        if (presetCh != m_config.ledConfig.auxChannelPreset || brightCh != m_config.ledConfig.auxChannelBright)
+        {
+            m_config.ledConfig.auxChannelPreset = presetCh;
+            m_config.ledConfig.auxChannelBright = brightCh;
+            m_modified = EVENT_CONFIG_MODEL_CHANGED;
+        }
     }
 }
 
