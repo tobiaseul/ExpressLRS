@@ -3,7 +3,7 @@ import {customElement, state} from "lit/decorators.js"
 import '../assets/mui.js'
 import {_renderOptions} from "../utils/libs.js"
 import {elrsState, saveOptionsAndConfig} from "../utils/state.js"
-import {postWithFeedback} from "../utils/feedback.js"
+import {postJSON, infoAlert, errorAlert} from "../utils/feedback.js"
 
 @customElement('led-config-panel')
 class LedConfigPanel extends LitElement {
@@ -125,6 +125,9 @@ class LedConfigPanel extends LitElement {
     }
 
     renderPixelEditor(pixel) {
+        if (!pixel) {
+            return html``
+        }
         return html`
             <div style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 4px;">
                 <h4>Color (RGB)</h4>
@@ -213,6 +216,18 @@ class LedConfigPanel extends LitElement {
         this.requestUpdate()
     }
 
+    checkChanged() {
+        // Check if any fields have changed from the loaded config
+        if (!elrsState.config.ledConfig) return false
+        const original = elrsState.config.ledConfig
+        return (
+            this.auxChannelPreset !== original.auxChannelPreset ||
+            this.auxChannelBright !== original.auxChannelBright ||
+            this.currentBrightness !== original.currentBrightness ||
+            JSON.stringify(this.ledConfig) !== JSON.stringify(original)
+        )
+    }
+
     save() {
         // Update aux channels in config
         this.ledConfig.auxChannelPreset = this.auxChannelPreset
@@ -220,11 +235,14 @@ class LedConfigPanel extends LitElement {
         this.ledConfig.currentBrightness = this.currentBrightness
 
         // Save via POST to /api/led/config
-        return postWithFeedback(
-            'Saving LED configuration',
-            'Error saving LED configuration',
-            '/api/led/config',
-            this.ledConfig
-        ).then(() => location.reload())
+        postJSON('/api/led/config', this.ledConfig, {
+            onload: async () => {
+                await infoAlert('LED Configuration', 'LED configuration saved successfully')
+                location.reload()
+            },
+            onerror: async (xhr) => {
+                await errorAlert('Error', 'Failed to save LED configuration: ' + (xhr.responseText || 'Unknown error'))
+            }
+        })
     }
 }
