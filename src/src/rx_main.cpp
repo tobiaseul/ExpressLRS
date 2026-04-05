@@ -750,6 +750,16 @@ static void ICACHE_RAM_ATTR updateDiversity()
     }
 }
 
+#if defined(PLATFORM_ESP32)
+static void NotifyLEDDeviceOfChannels()
+{
+    for (uint8_t ch = 0; ch < CRSF_NUM_CHANNELS; ch++) {
+        uint32_t chValue = ChannelData[ch];
+        RGB_LED_device.HandleChannelData(ch, chValue);
+    }
+}
+#endif
+
 void ICACHE_RAM_ATTR HWtimerCallbackTock()
 {
     PFDloop.intEvent(micros()); // our internal osc just fired
@@ -762,12 +772,7 @@ void ICACHE_RAM_ATTR HWtimerCallbackTock()
             if (teamraceHasModelMatch)
                 servoNewChannelsAvailable();
 #if defined(PLATFORM_ESP32)
-            // Notify LED device of channel changes for preset/brightness control
-            for (uint8_t ch = 0; ch < 16; ch++) {
-                // Get channel value in range 0-2047 (standard CRSF range)
-                uint16_t chValue = crsfRouter.getChannelData(ch);
-                RGB_LED_device.HandleChannelData(ch, chValue);
-            }
+            NotifyLEDDeviceOfChannels();
 #endif
         }
         else
@@ -903,12 +908,7 @@ static void ICACHE_RAM_ATTR ProcessRfPacket_RC(OTA_Packet_s const * const otaPkt
             if (teamraceHasModelMatch)
                 servoNewChannelsAvailable();
 #if defined(PLATFORM_ESP32)
-            // Notify LED device of channel changes for preset/brightness control
-            for (uint8_t ch = 0; ch < 16; ch++) {
-                // Get channel value in range 0-2047 (standard CRSF range)
-                uint16_t chValue = crsfRouter.getChannelData(ch);
-                RGB_LED_device.HandleChannelData(ch, chValue);
-            }
+            NotifyLEDDeviceOfChannels();
 #endif
         }
         else if (!LQCalcDVDA.currentIsSet())
