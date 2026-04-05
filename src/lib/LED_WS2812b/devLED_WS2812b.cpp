@@ -12,7 +12,6 @@ DevLED_WS2812b::~DevLED_WS2812b()
 {
     for (auto& mapping : m_strips) {
         if (mapping.strip) {
-            mapping.strip->end();
             delete mapping.strip;
         }
     }
@@ -206,15 +205,16 @@ void DevLED_WS2812b::RenderPixel(uint8_t stripIdx, uint8_t pixelIndex, const led
 }
 
 // Global device instance
-static DevLED_WS2812b ledDevice;
+DevLED_WS2812b ledDevice;
 
 // Device interface callbacks
-static void device_begin(void)
+static int device_begin(void)
 {
     ledDevice.Begin();
+    return DURATION_IMMEDIATELY;
 }
 
-static int device_update(void)
+static int device_timeout(void)
 {
     ledDevice.Render();
     return DURATION_IMMEDIATELY;
@@ -222,10 +222,9 @@ static int device_update(void)
 
 // Device declaration for integration into rx_main.cpp
 device_t RGB_LED_device = {
-    .initialize = device_begin,
-    .start = nullptr,
-    .update = device_update,
+    .initialize = nullptr,
+    .start = device_begin,
     .event = nullptr,
-    .timeout = nullptr,
+    .timeout = device_timeout,
     .subscribe = 0,
 };

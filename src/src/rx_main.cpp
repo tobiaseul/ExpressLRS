@@ -750,12 +750,12 @@ static void ICACHE_RAM_ATTR updateDiversity()
     }
 }
 
-#if defined(PLATFORM_ESP32)
+#if defined(PLATFORM_ESP32) && defined(TARGET_RX)
 static void NotifyLEDDeviceOfChannels()
 {
     for (uint8_t ch = 0; ch < CRSF_NUM_CHANNELS; ch++) {
         uint32_t chValue = ChannelData[ch];
-        RGB_LED_device.HandleChannelData(ch, chValue);
+        ledDevice.HandleChannelData(ch, chValue);
     }
 }
 #endif

@@ -8,6 +8,7 @@
 #include <vector>
 
 extern device_t RGB_LED_device;
+extern class DevLED_WS2812b ledDevice;
 
 typedef struct {
     uint8_t pwmPin;
