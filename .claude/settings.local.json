@@ -21,7 +21,23 @@
       "Bash(git reset:*)",
       "Bash(grep -n \"postWithFeedback\\\\|\\\\.then\\\\|requestUpdate\" /Users/tobi/Documents/Coding/ExpressLRS/src/html/src/pages/*.js)",
       "Bash(grep -E \"\\\\.\\(js|ts\\)$\")",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(grep -n \"LED_MAX_PRESETS\\\\|LED_MAX_STRIPS\\\\|LED_MAX_PIXELS_PER_STRIP\\\\|led_config_t\\\\|led_pixel_t\" /Users/tobi/Documents/Coding/ExpressLRS/src/lib/CONFIG/*.h)",
+      "Bash(python3 -m pio check src/lib/WIFI/devWIFI.cpp)",
+      "Bash(clang++ -fsyntax-only -std=c++17 -I./src/include -I./src/lib -Wvla -Wall -Wextra src/lib/WIFI/devWIFI.cpp)",
+      "Bash(grep -E \"\\\\.\\(h|cpp\\)$\")",
+      "Bash(platformio test:*)",
+      "Bash(bash /tmp/test_summary.sh)",
+      "Bash(pio test:*)",
+      "Bash(git restore:*)",
+      "Bash(git push:*)",
+      "Bash(grep -l \"er6\\\\|er8\\\\|ER6\\\\|ER8\" /Users/tobi/Documents/Coding/ExpressLRS/src/targets/*.ini)",
+      "Bash(python3 -c \"import platformio; print\\(platformio.__version__\\)\")",
+      "Bash(pio run:*)",
+      "Bash(pyenv versions:*)",
+      "Bash(pyenv install:*)",
+      "Bash(pyenv global:*)",
+      "Bash(pip install:*)"
     ]
   },
   "enabledPlugins": {
