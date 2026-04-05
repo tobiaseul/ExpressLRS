@@ -47,6 +47,7 @@
 #include "devVTXSPI.h"
 #include "devMSPVTX.h"
 #include "devThermal.h"
+#include "devLED_WS2812b.h"
 #include "esp_task_wdt.h"
 #endif
 
@@ -82,6 +83,9 @@ device_affinity_t ui_devices[] = {
   {&LED_device, 0},
   {&RXLUA_device, 0},
   {&RGB_device, 0},
+#if defined(PLATFORM_ESP32)
+  {&RGB_LED_device, 0},
+#endif
   {&WIFI_device, 0},
   {&Button_device, 0},
   {&AnalogVbat_device, 0},
@@ -757,6 +761,14 @@ void ICACHE_RAM_ATTR HWtimerCallbackTock()
             crsfRCFrameAvailable();
             if (teamraceHasModelMatch)
                 servoNewChannelsAvailable();
+#if defined(PLATFORM_ESP32)
+            // Notify LED device of channel changes for preset/brightness control
+            for (uint8_t ch = 0; ch < 16; ch++) {
+                // Get channel value in range 0-2047 (standard CRSF range)
+                uint16_t chValue = crsfRouter.getChannelData(ch);
+                RGB_LED_device.HandleChannelData(ch, chValue);
+            }
+#endif
         }
         else
         {
@@ -890,6 +902,14 @@ static void ICACHE_RAM_ATTR ProcessRfPacket_RC(OTA_Packet_s const * const otaPkt
             // when new frames are available, and will decide later if the frame will be forwarded
             if (teamraceHasModelMatch)
                 servoNewChannelsAvailable();
+#if defined(PLATFORM_ESP32)
+            // Notify LED device of channel changes for preset/brightness control
+            for (uint8_t ch = 0; ch < 16; ch++) {
+                // Get channel value in range 0-2047 (standard CRSF range)
+                uint16_t chValue = crsfRouter.getChannelData(ch);
+                RGB_LED_device.HandleChannelData(ch, chValue);
+            }
+#endif
         }
         else if (!LQCalcDVDA.currentIsSet())
         {
