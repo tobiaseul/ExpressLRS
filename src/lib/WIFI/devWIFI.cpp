@@ -925,6 +925,129 @@ static void HandleContinuousWave(AsyncWebServerRequest *request) {
   }
 }
 
+#if defined(TARGET_RX) && defined(PLATFORM_ESP32)
+static void handleGetLedConfig(AsyncWebServerRequest *request)
+{
+  const led_config_t* ledConfig = config.GetLedConfig();
+  if (!ledConfig) {
+    request->send(404, "application/json", "{\"error\": \"LED config not available\"}");
+    return;
+  }
+
+  auto *response = new AsyncJsonResponse();
+  const auto json = response->getRoot();
+
+  // Serialize presets
+  const auto presets = json["presets"].to<JsonArray>();
+  for (uint8_t p = 0; p < LED_MAX_PRESETS; p++) {
+    const auto preset = presets[p].to<JsonObject>();
+    const auto strips = preset["strips"].to<JsonArray>();
+
+    for (uint8_t s = 0; s < LED_MAX_STRIPS; s++) {
+      const auto strip = strips[s].to<JsonObject>();
+      strip["enabled"] = ledConfig->presets[p].strips[s].enabled;
+
+      const auto pixels = strip["pixels"].to<JsonArray>();
+      for (uint8_t px = 0; px < LED_MAX_PIXELS_PER_STRIP; px++) {
+        const led_pixel_t& pixel = ledConfig->presets[p].strips[s].pixels[px];
+        const auto pixelObj = pixels[px].to<JsonObject>();
+        pixelObj["r"] = pixel.r;
+        pixelObj["g"] = pixel.g;
+        pixelObj["b"] = pixel.b;
+        pixelObj["state"] = pixel.state;
+        pixelObj["blinkFreqHz"] = pixel.blinkFreqHz;
+        pixelObj["brightness"] = pixel.brightness;
+      }
+    }
+  }
+
+  // Serialize global settings
+  json["currentPreset"] = ledConfig->currentPreset;
+  json["currentBrightness"] = ledConfig->currentBrightness;
+  json["auxChannelPreset"] = ledConfig->auxChannelPreset;
+  json["auxChannelBright"] = ledConfig->auxChannelBright;
+
+  response->setLength();
+  request->send(response);
+}
+
+static void handlePostLedConfig(AsyncWebServerRequest *request, JsonVariant &json)
+{
+  if (!json.is<JsonObject>()) {
+    request->send(400, "application/json", "{\"error\": \"Invalid JSON format\"}");
+    return;
+  }
+
+  const JsonObject root = json.as<JsonObject>();
+
+  // Update global settings if present
+  if (root["currentPreset"].is<JsonVariant>()) {
+    uint8_t preset = root["currentPreset"];
+    if (preset < LED_MAX_PRESETS) {
+      config.SetLedPreset(preset);
+    }
+  }
+
+  if (root["currentBrightness"].is<JsonVariant>()) {
+    uint8_t brightness = root["currentBrightness"];
+    config.SetLedBrightness(brightness);
+  }
+
+  if (root["auxChannelPreset"].is<JsonVariant>() || root["auxChannelBright"].is<JsonVariant>()) {
+    uint8_t presetCh = root["auxChannelPreset"] | 255;
+    uint8_t brightCh = root["auxChannelBright"] | 255;
+    config.SetLedAuxChannels(presetCh, brightCh);
+  }
+
+  // Update presets if present
+  if (root["presets"].is<JsonArray>()) {
+    const JsonArray presets = root["presets"].as<JsonArray>();
+
+    for (size_t p = 0; p < presets.size() && p < LED_MAX_PRESETS; p++) {
+      const JsonObject preset = presets[p].as<JsonObject>();
+
+      if (preset["strips"].is<JsonArray>()) {
+        const JsonArray strips = preset["strips"].as<JsonArray>();
+
+        for (size_t s = 0; s < strips.size() && s < LED_MAX_STRIPS; s++) {
+          const JsonObject strip = strips[s].as<JsonObject>();
+
+          // Update strip enabled state
+          if (strip["enabled"].is<JsonVariant>()) {
+            uint8_t enabled = strip["enabled"];
+            config.SetLedStripEnabled(p, s, enabled != 0);
+          }
+
+          // Update pixels
+          if (strip["pixels"].is<JsonArray>()) {
+            const JsonArray pixels = strip["pixels"].as<JsonArray>();
+
+            for (size_t px = 0; px < pixels.size() && px < LED_MAX_PIXELS_PER_STRIP; px++) {
+              const JsonObject pixelObj = pixels[px].as<JsonObject>();
+
+              led_pixel_t pixel = {};
+              pixel.r = pixelObj["r"] | 0;
+              pixel.g = pixelObj["g"] | 0;
+              pixel.b = pixelObj["b"] | 0;
+              pixel.state = pixelObj["state"] | 0;
+              pixel.blinkFreqHz = pixelObj["blinkFreqHz"] | 0;
+              pixel.brightness = pixelObj["brightness"] | 255;
+
+              config.SetLedPixel(p, s, px, pixel);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Commit changes to EEPROM
+  config.Commit();
+
+  request->send(200, "application/json", "{\"status\": \"ok\", \"msg\": \"LED configuration updated\"}");
+}
+#endif
+
 static bool initialize()
 {
   wifiStarted = false;
@@ -1135,6 +1258,11 @@ static void startServices()
     auto *handler = new AsyncCallbackJsonWebHandler("/import", ImportConfiguration);
     handler->setMaxContentLength(32768);
     server.addHandler(handler);
+  #endif
+
+  #if defined(TARGET_RX) && defined(PLATFORM_ESP32)
+    server.on("/api/led/config", HTTP_GET, handleGetLedConfig);
+    server.addHandler(new AsyncCallbackJsonWebHandler("/api/led/config", handlePostLedConfig));
   #endif
 
   #if defined(RADIO_LR1121)

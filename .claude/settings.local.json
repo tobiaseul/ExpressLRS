@@ -4,7 +4,24 @@
       "Bash(grep -n \"UID_LEN\\\\|RESERVED_EEPROM\" /Users/tobi/Documents/Coding/ExpressLRS/src/lib/elrs_eeprom/elrs_eeprom.h /Users/tobi/Documents/Coding/ExpressLRS/src/lib/*/config.h)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(python3)",
+      "Bash(python3 -m py_compile src/lib/CONFIG/config.h src/lib/CONFIG/config.cpp)",
+      "Bash(git commit -m 'feat: add LED config getters and setters to RxConfig:*)",
+      "Bash(find:*)",
+      "Bash(grep -E \"\\\\.\\(h|hpp\\)$\")",
+      "Bash(git commit:*)",
+      "Bash(make)",
+      "Bash(grep -E \"\\\\.\\(cpp|h\\)$\")",
+      "Bash(clang++ -std=c++17 -I./src/include -I./src/lib -fsyntax-only src/lib/LED_WS2812b/devLED_WS2812b.cpp)",
+      "Bash(python -m pip list)",
+      "Bash(pio --version)",
+      "Bash(make clean:*)",
+      "Bash(platformio run:*)",
+      "Bash(git reset:*)",
+      "Bash(grep -n \"postWithFeedback\\\\|\\\\.then\\\\|requestUpdate\" /Users/tobi/Documents/Coding/ExpressLRS/src/html/src/pages/*.js)",
+      "Bash(grep -E \"\\\\.\\(js|ts\\)$\")",
+      "mcp__ide__getDiagnostics"
     ]
   },
   "enabledPlugins": {
