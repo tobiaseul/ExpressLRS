@@ -217,6 +217,7 @@ enum eServoOutputMode : uint8_t
     somPwm,         // 13: true PWM mode (NOT SUPPORTED)
     somSerial1RX,   // 14: secondary Serial RX
     somSerial1TX,   // 15: secondary Serial TX
+    somLED,         // 16: WS2812b LED output
 };
 
 enum eServoOutputFailsafeMode : uint8_t

@@ -16,7 +16,7 @@
 #define RX_CONFIG_MAGIC     (0b10U << 30)
 
 #define TX_CONFIG_VERSION   8U
-#define RX_CONFIG_VERSION   11U
+#define RX_CONFIG_VERSION   12U
 
 #if defined(TARGET_TX)
 
@@ -205,6 +205,34 @@ extern TxConfig config;
 
 #if defined(TARGET_RX)
 constexpr uint8_t PWM_MAX_CHANNELS = 16;
+constexpr uint8_t LED_MAX_STRIPS = 4;
+constexpr uint8_t LED_MAX_PIXELS_PER_STRIP = 30;
+constexpr uint8_t LED_MAX_PRESETS = 4;
+
+typedef struct {
+    uint8_t r, g, b;           // RGB color (0-255 each)
+    uint8_t state:2;           // 0=off, 1=on, 2=blinking
+    uint16_t blinkFreqHz:10;   // blink frequency * 10 (0.1-100 Hz)
+    uint8_t brightness:8;      // per-pixel brightness (0-255)
+} led_pixel_t;
+
+typedef struct {
+    uint8_t enabled:1;
+    uint8_t unused:7;
+    led_pixel_t pixels[LED_MAX_PIXELS_PER_STRIP];
+} led_strip_t;
+
+typedef struct {
+    led_strip_t strips[LED_MAX_STRIPS];
+} led_preset_t;
+
+typedef struct {
+    led_preset_t presets[LED_MAX_PRESETS];
+    uint8_t currentPreset;     // active preset (0-3)
+    uint8_t currentBrightness; // global brightness (0-100%)
+    uint8_t auxChannelPreset;  // AUX channel for preset (0-15, 255=disabled)
+    uint8_t auxChannelBright;  // AUX channel for brightness (0-15, 255=disabled)
+} led_config_t;
 
 typedef enum : uint8_t {
     BINDSTORAGE_PERSISTENT = 0,
@@ -254,6 +282,7 @@ typedef struct __attribute__((packed)) {
                 teamracePitMode:1;  // FUTURE: Enable pit mode when disabling model
     uint8_t     targetSysId;
     uint8_t     sourceSysId;
+    led_config_t ledConfig;
 } rx_config_t;
 
 class RxConfig
