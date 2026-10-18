@@ -47,6 +47,7 @@
 #include "devVTXSPI.h"
 #include "devMSPVTX.h"
 #include "devThermal.h"
+#include "devPowerSwitch.h"
 #include "esp_task_wdt.h"
 #endif
 
@@ -91,6 +92,7 @@ device_affinity_t ui_devices[] = {
   {&VTxSPI_device, 0},
   {&MSPVTx_device, 0}, // dependency on VTxSPI_device
   {&Thermal_device, 0},
+  {&PowerSwitch_device, 1},
 #endif
 };
 
@@ -1519,7 +1521,8 @@ static void setupConfigAndPocCheck()
     config.Load();
 
     // If bound, track number of plug/unplug cycles to go to binding mode in eeprom
-    if (config.GetIsBound() && config.GetPowerOnCounter() < 3)
+    // (a periodic power switch wake is no plug cycle and must not wear the flash)
+    if (config.GetIsBound() && config.GetPowerOnCounter() < 3 && !PowerSwitch_isSleepWake())
     {
         config.SetPowerOnCounter(config.GetPowerOnCounter() + 1);
         config.Commit();

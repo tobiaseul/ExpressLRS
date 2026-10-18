@@ -118,6 +118,7 @@ static const struct {
     {HARDWARE_pwm_outputs, "pwm_outputs", ARRAY},
     {HARDWARE_pwm_outputs_count, "pwm_outputs", COUNT},
     {HARDWARE_pwm_out_only, "pwm_out_only", BOOL},
+    {HARDWARE_power_switch, "power_switch", INT},
     {HARDWARE_vbat, "vbat", INT},
     {HARDWARE_vbat_offset, "vbat_offset", INT},
     {HARDWARE_vbat_scale, "vbat_scale", INT},

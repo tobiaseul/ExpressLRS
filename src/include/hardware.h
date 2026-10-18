@@ -129,6 +129,9 @@ typedef enum {
     HARDWARE_pwm_outputs_count,
     HARDWARE_pwm_out_only,
 
+    // Remote power switch
+    HARDWARE_power_switch,
+
     // VBAT
     HARDWARE_vbat,
     HARDWARE_vbat_offset,

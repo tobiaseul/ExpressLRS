@@ -79,6 +79,9 @@
 #define OPT_HAS_SERVO_OUTPUT (GPIO_PIN_PWM_OUTPUTS_COUNT > 0)
 #define OPT_PWM_OUT_ONLY hardware_flag(HARDWARE_pwm_out_only)
 
+// Remote power switch
+#define GPIO_PIN_POWER_SWITCH hardware_pin(HARDWARE_power_switch)
+
 #if defined(PLATFORM_ESP32)
 // VTX
 #define OPT_HAS_VTX_SPI (hardware_pin(HARDWARE_vtx_nss) != UNDEF_PIN)
