@@ -34,6 +34,8 @@ public:
 
     void TXnb(uint8_t * data, bool sendGeminiBuffer, uint8_t * dataGemini, SX12XX_Radio_Number_t radioNumber);
     void RXnb();
+    void RXdutyCycle(uint16_t dio1Mask, uint8_t periodBase, uint16_t rxCount, uint16_t sleepCount);
+    void CommitOutputPower(); // apply a pending SetOutputPower() now instead of after the next TX
 
     uint16_t GetIrqStatus(SX12XX_Radio_Number_t radioNumber);
     void ClearIrqStatus(uint16_t irqMask, SX12XX_Radio_Number_t radioNumber);
@@ -82,5 +84,4 @@ private:
     static void IsrCallback(SX12XX_Radio_Number_t radioNumber);
     bool RXnbISR(uint16_t irqStatus, SX12XX_Radio_Number_t radioNumber); // ISR for non-blocking RX routine
     void TXnbISR(); // ISR for non-blocking TX routine
-    void CommitOutputPower();
 };

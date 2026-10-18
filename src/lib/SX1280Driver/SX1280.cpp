@@ -389,6 +389,25 @@ void ICACHE_RAM_ATTR SX1280Driver::SetFrequencyReg(uint32_t regfreq, SX12XX_Radi
     }
 }
 
+/***
+ * @brief: Let the radio listen on its own: RX for rxCount, sleep for sleepCount (in periodBase ticks),
+ * repeated until a packet raises one of the dio1Mask IRQs on DIO1. Used for wake-on-radio.
+ ***/
+void SX1280Driver::RXdutyCycle(uint16_t dio1Mask, uint8_t periodBase, uint16_t rxCount, uint16_t sleepCount)
+{
+    SetDioIrqParams(dio1Mask, dio1Mask);
+    ClearIrqStatus(SX1280_IRQ_RADIO_ALL, SX12XX_Radio_All);
+
+    uint8_t buf[5];
+    buf[0] = periodBase;
+    buf[1] = (uint8_t)(rxCount >> 8);
+    buf[2] = (uint8_t)(rxCount & 0xFF);
+    buf[3] = (uint8_t)(sleepCount >> 8);
+    buf[4] = (uint8_t)(sleepCount & 0xFF);
+    hal.WriteCommand(SX1280_RADIO_SET_RXDUTYCYCLE, buf, sizeof(buf), SX12XX_Radio_All, 100);
+    currOpmode = SX1280_MODE_RX_CONT;
+}
+
 void SX1280Driver::SetFIFOaddr(uint8_t txBaseAddr, uint8_t rxBaseAddr)
 {
     uint8_t buf[2];

@@ -22,6 +22,7 @@
 #include "devThermal.h"
 #include "devPDET.h"
 #include "devBackpack.h"
+#include "devWakeBurst.h"
 #else
 // Fake functions for 8285
 void checkBackpackUpdate() {}
@@ -113,6 +114,9 @@ device_affinity_t ui_devices[] = {
   {&Gsensor_device, 0},
   {&Thermal_device, 0},
   {&PDET_device, 0},
+#endif
+#if defined(RADIO_SX128X)
+  {&WakeBurst_device, 1}, // same core as Handset_device, which reads the air rate
 #endif
 #endif
   {&VTX_device, 0}
