@@ -6,6 +6,7 @@
 #include "crsf_protocol.h"
 #include "logging.h"
 #include "PowerSwitchLogic.h"
+#include "SleepPins.h"
 
 #include "hwTimer.h"
 #include "RFAMP_hal.h"
@@ -85,7 +86,9 @@ static void startWakeOnRadio()
 {
     hwTimer::stop();
     WakeRadio_configure();
-    RFAMP.RXenable();
+    // front end off (< 1 uA): the wake burst comes from a transmitter nearby and gets through
+    // the unpowered LNA, keeping the LNA on would cost mA
+    RFAMP.TXRXdisable();
     Radio.RXdutyCycle(SX1280_IRQ_RX_DONE, WakeRadio::dutyPeriodBase, WakeRadio::dutyRxTicks, WakeRadio::dutySleepTicks);
     // keep the radio selected-off, out of reset and the front end in RX while the ESP32 sleeps
     holdPin(GPIO_PIN_NSS);
@@ -97,9 +100,22 @@ static void startWakeOnRadio()
     esp_sleep_enable_timer_wakeup(POWER_SWITCH_EMERGENCY_WAKE_MS * 1000);
 }
 
+static void floatSignalPins()
+{
+    int16_t pins[SLEEP_PINS_MAX];
+    uint8_t count = 0;
+    SleepPins_collect(GPIO_PIN_PWM_OUTPUTS, GPIO_PIN_PWM_OUTPUTS_COUNT, GPIO_PIN_RCSIGNAL_TX, GPIO_PIN_RCSIGNAL_RX,
+                      pins, count);
+    for (uint8_t i = 0; i < count; i++)
+    {
+        pinMode(pins[i], INPUT);
+    }
+}
+
 static void enterDeepSleep()
 {
     writeOutput();
+    floatSignalPins();
     holdPin(GPIO_PIN_POWER_SWITCH);
     if (canWakeOnRadio())
     {
