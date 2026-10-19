@@ -146,10 +146,16 @@ static int start()
     return VBAT_SAMPLE_INTERVAL;
 }
 
+static int32_t lastSourceMilliVolts[VOLTAGE_SOURCE_COUNT] = {0};
+
+int32_t Vbat_getMilliVolts()
+{
+    return lastSourceMilliVolts[0];
+}
+
 static void reportVbat()
 {
     int32_t sourceMilliVolts[VOLTAGE_SOURCE_COUNT] = {0};
-    static int32_t lastSourceMilliVolts[VOLTAGE_SOURCE_COUNT] = {0};
     static uint32_t lastTelemSentMs = 0;
     bool triggerPacket = false;
 

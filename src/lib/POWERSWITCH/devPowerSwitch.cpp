@@ -17,6 +17,8 @@
 #include <esp_sleep.h>
 
 extern RFAMP_hal RFAMP;
+// devAnalogVbat.h, declared here: including it would pull the AnalogVbat library into the native test builds
+extern int32_t Vbat_getMilliVolts();
 
 // 0-based CRSF channel, default CH12 (AUX8)
 #if !defined(POWER_SWITCH_CHANNEL)
@@ -37,6 +39,8 @@ static const PowerSwitchTiming timing = {
     .listenWindowMs = 5000,
     // longer than the 60 s auto WiFi start of a disconnected RX
     .powerOnListenMs = 90000,
+    // WiFi/bind mode left on with the output off: sleep after 15 min instead of draining the battery
+    .maxAwakeMs = 15 * 60 * 1000,
 };
 
 static PowerSwitchLogic *logic;
@@ -112,12 +116,19 @@ static void floatSignalPins()
     }
 }
 
-static void enterDeepSleep()
+static void enterDeepSleep(bool cutoff)
 {
     writeOutput();
     floatSignalPins();
     holdPin(GPIO_PIN_POWER_SWITCH);
-    if (canWakeOnRadio())
+    if (cutoff)
+    {
+        // battery below 3.2 V per cell: no wake source, the radio sleeps too; only replugging the battery
+        // (power-on reset) wakes the receiver
+        DBGLN("power switch: low battery, sleep until the battery is replugged");
+        Radio.End();
+    }
+    else if (canWakeOnRadio())
     {
         DBGLN("power switch: sleep until wake burst");
         startWakeOnRadio();
@@ -164,18 +175,17 @@ bool PowerSwitch_isSleepWake()
 
 static int timeout()
 {
-    // never sleep while binding, in WiFi/update mode or while a link is being established
-    if (InBindingMode || connectionState > MODE_STATES || connectionState == tentative)
-    {
-        return POWER_SWITCH_INTERVAL_MS;
-    }
+    // binding, WiFi/update mode or a link being established: no sleep (with the output off at most maxAwakeMs)
+    const bool busy = InBindingMode || connectionState > MODE_STATES || connectionState == tentative;
     const bool linkUp = connectionState == connected;
     const bool switchOn = ChannelData[POWER_SWITCH_CHANNEL] > CRSF_CHANNEL_VALUE_MID;
-    const bool sleep = logic->update(millis(), linkUp, switchOn);
+    const bool armed = CRSF_to_BIT(ChannelData[AUX1]);
+    const bool lowBattery = PowerSwitch_lowBattery(Vbat_getMilliVolts());
+    const bool sleep = logic->update(millis(), linkUp, switchOn, armed, busy, lowBattery);
     writeOutput();
     if (sleep)
     {
-        enterDeepSleep();
+        enterDeepSleep(logic->cutoff());
     }
     return POWER_SWITCH_INTERVAL_MS;
 }
