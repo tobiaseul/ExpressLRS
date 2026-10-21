@@ -115,7 +115,7 @@ typedef enum {
     HARDWARE_i2c_scl,
     HARDWARE_i2c_sda,
     HARDWARE_misc_gsensor_int,
-    HARDWARE_misc_buzzer,  // stm32 only
+    HARDWARE_misc_buzzer,  // stm32; ESP32 RX: model finder buzzer (lib/FINDBUZZER)
     HARDWARE_misc_fan_en,
     HARDWARE_misc_fan_pwm,
     HARDWARE_misc_fan_tacho,

@@ -7,13 +7,16 @@
 #include "logging.h"
 #include "PowerSwitchLogic.h"
 #include "SleepPins.h"
+#include "devBuzzer.h"
 
 #include "hwTimer.h"
 #include "RFAMP_hal.h"
 #include "WakeRadioHw.h"
 
 #include <driver/gpio.h>
+#if !defined(PLATFORM_ESP32_C3)
 #include <driver/rtc_io.h>
+#endif
 #include <esp_sleep.h>
 
 extern RFAMP_hal RFAMP;
@@ -81,7 +84,21 @@ static void releasePin(int pin)
 
 static bool canWakeOnRadio()
 {
+#if defined(PLATFORM_ESP32_C3)
+    // ESP32-C3: deep-sleep GPIO wake only on GPIO0-5 (VDD3P3_RTC domain)
+    return GPIO_PIN_DIO1 != UNDEF_PIN && GPIO_PIN_DIO1 <= 5;
+#else
     return GPIO_PIN_DIO1 != UNDEF_PIN && rtc_gpio_is_valid_gpio((gpio_num_t)GPIO_PIN_DIO1);
+#endif
+}
+
+static void enableRadioWake()
+{
+#if defined(PLATFORM_ESP32_C3)
+    esp_deep_sleep_enable_gpio_wakeup(1ULL << GPIO_PIN_DIO1, ESP_GPIO_WAKEUP_GPIO_HIGH);
+#else
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)GPIO_PIN_DIO1, 1);
+#endif
 }
 
 // The SX1280 keeps listening in RX duty cycle on the wake channel and raises DIO1
@@ -100,7 +117,7 @@ static void startWakeOnRadio()
     holdPin(GPIO_PIN_TX_ENABLE);
     holdPin(GPIO_PIN_RX_ENABLE);
     holdPin(GPIO_PIN_ANT_CTRL);
-    esp_sleep_enable_ext0_wakeup((gpio_num_t)GPIO_PIN_DIO1, 1);
+    enableRadioWake();
     esp_sleep_enable_timer_wakeup(POWER_SWITCH_EMERGENCY_WAKE_MS * 1000);
 }
 
@@ -119,6 +136,7 @@ static void floatSignalPins()
 static void enterDeepSleep(bool cutoff)
 {
     writeOutput();
+    Buzzer_off();
     floatSignalPins();
     holdPin(GPIO_PIN_POWER_SWITCH);
     if (cutoff)

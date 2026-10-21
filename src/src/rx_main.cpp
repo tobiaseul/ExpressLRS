@@ -48,6 +48,7 @@
 #include "devMSPVTX.h"
 #include "devThermal.h"
 #include "devPowerSwitch.h"
+#include "devBuzzer.h"
 #include "esp_task_wdt.h"
 #endif
 
@@ -92,7 +93,10 @@ device_affinity_t ui_devices[] = {
   {&VTxSPI_device, 0},
   {&MSPVTx_device, 0}, // dependency on VTxSPI_device
   {&Thermal_device, 0},
+#endif
+#if defined(PLATFORM_ESP32)
   {&PowerSwitch_device, 1},
+  {&Buzzer_device, 1},
 #endif
 };
 

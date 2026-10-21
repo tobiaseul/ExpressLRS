@@ -81,6 +81,8 @@
 
 // Remote power switch
 #define GPIO_PIN_POWER_SWITCH hardware_pin(HARDWARE_power_switch)
+// Model finder buzzer (passive, driven with a tone)
+#define GPIO_PIN_BUZZER hardware_pin(HARDWARE_misc_buzzer)
 
 #if defined(PLATFORM_ESP32)
 // VTX
